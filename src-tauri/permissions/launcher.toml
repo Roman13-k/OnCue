@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-launch-application"
+description = "Allows launching an application by filesystem path"
+commands.allow = ["launch_application"]
+
+[[permission]]
+identifier = "allow-boot-session"
+description = "Allows reading autostart session flag and running boot launches"
+commands.allow = ["is_autostart_session", "run_boot_launches"]

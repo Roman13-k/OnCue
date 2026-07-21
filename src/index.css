@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+@theme {
+  /* Typography — native Windows feel, calm and readable */
+  --font-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Cascadia Code", "Segoe UI Mono", ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* Surfaces — cool stone, soft light */
+  --color-surface: #f7f7f5;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #f0efed;
+  --color-surface-hover: #ebeae7;
+  --color-surface-sunken: #e8e7e4;
+
+  /* Borders */
+  --color-border: #e4e2de;
+  --color-border-subtle: #eceae6;
+  --color-border-strong: #d0cdc7;
+
+  /* Text */
+  --color-text-primary: #1a1917;
+  --color-text-secondary: #5c5954;
+  --color-text-muted: #9a9690;
+  --color-text-inverse: #fafaf9;
+
+  /* Accent — quiet teal */
+  --color-accent: #0d9488;
+  --color-accent-hover: #0f766e;
+  --color-accent-soft: #ccfbf1;
+  --color-accent-muted: #99f6e4;
+  --color-accent-fg: #115e59;
+
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows — barely there */
+  --shadow-xs: 0 1px 2px 0 rgb(26 25 23 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(26 25 23 / 0.05), 0 1px 3px -1px rgb(26 25 23 / 0.04);
+  --shadow-md: 0 4px 8px -2px rgb(26 25 23 / 0.06), 0 2px 4px -2px rgb(26 25 23 / 0.04);
+  --shadow-lg: 0 12px 24px -8px rgb(26 25 23 / 0.1);
+  --shadow-focus: 0 0 0 3px rgb(13 148 136 / 0.22);
+
+  /* Spacing */
+  --spacing-page-x: 1.5rem;
+  --spacing-page-y: 1rem;
+
+  /* Motion */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 140ms;
+  --duration-normal: 220ms;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    height: 100%;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 0% -20%, rgb(204 251 241 / 0.45), transparent 55%),
+      radial-gradient(ellipse 90% 60% at 100% 0%, rgb(240 239 237 / 0.9), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="button"],
+  [role="menuitem"],
+  [role="option"],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-fg);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@layer utilities {
+  .app-shell {
+    animation: shell-in 420ms var(--ease-out) both;
+  }
+
+  .panel-enter {
+    animation: panel-in 320ms var(--ease-out) both;
+  }
+
+  /* Minimal custom scrollbar — vertical areas only */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  .scroll-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 9999px;
+  }
+
+  .scroll-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-text-muted);
+  }
+}
+
+@keyframes shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

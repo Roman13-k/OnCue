@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-resolve-app-target"
+description = "Allows resolving an application path to name and icon"
+commands.allow = ["resolve_app_target"]

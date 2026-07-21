@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-schedule-storage"
+description = "Allows loading and saving schedules in app data storage"
+commands.allow = ["load_schedules", "save_schedules", "cancel_upcoming_launch"]
