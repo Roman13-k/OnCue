@@ -4,7 +4,7 @@ import { cn } from "../../../../shared/lib/cn";
 import { IconApp, IconGrip, IconMore } from "../../../../shared/ui/icons";
 import { formatWhenPrimary, formatWhenSecondary, getDisplayStatus, NOTIFY_LABEL } from "../../labels";
 import type { Schedule } from "../../types";
-import { ModeLabel, StatusBadge } from "../ui";
+import { ModeLabel, ScheduleExceptionBadges, StatusBadge } from "../ui";
 import { SCHEDULE_COLS } from "./scheduleCols";
 
 type ScheduleRowProps = {
@@ -54,7 +54,7 @@ export function ScheduleRow({ schedule, reorderEnabled, menuOpen, onToggleMenu }
                 ? "cursor-grab hover:bg-surface-muted hover:text-text-secondary active:cursor-grabbing"
                 : "cursor-default opacity-45",
             )}
-            aria-label={reorderEnabled ? "Перетащить" : "Перетаскивание отключено во время сортировки"}
+            aria-label={reorderEnabled ? "Drag to reorder" : "Reordering disabled while sorting"}
             {...(reorderEnabled ? attributes : {})}
             {...(reorderEnabled ? listeners : {})}
           >
@@ -73,7 +73,13 @@ export function ScheduleRow({ schedule, reorderEnabled, menuOpen, onToggleMenu }
             )}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-medium text-text-primary">{schedule.appName}</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <div className="truncate text-sm font-medium text-text-primary">{schedule.appName}</div>
+              <ScheduleExceptionBadges
+                isGame={schedule.isGame}
+                skipOnBattery={schedule.skipOnBattery}
+              />
+            </div>
             <div className="mt-0.5 truncate text-xs text-text-muted" title={schedule.errorMessage ?? schedule.appPath}>
               {schedule.health === "error" && schedule.errorMessage
                 ? schedule.errorMessage
@@ -81,32 +87,27 @@ export function ScheduleRow({ schedule, reorderEnabled, menuOpen, onToggleMenu }
             </div>
           </div>
         </div>
-
         <div className="min-w-0">
           <div className="truncate text-sm text-text-primary">{whenPrimary}</div>
           {whenSecondary ? (
             <div className="mt-0.5 truncate text-xs text-text-muted">{whenSecondary}</div>
           ) : null}
         </div>
-
         <div className="min-w-0">
           <ModeLabel mode={schedule.mode} />
         </div>
-
         <div className="min-w-0 text-sm text-text-secondary">
           {NOTIFY_LABEL[schedule.notify]}
         </div>
-
         <div className="min-w-0">
           <StatusBadge status={status} />
         </div>
-
         <div className="flex justify-end">
           <button
             type="button"
-            aria-label="Действия"
+            aria-label="Actions"
             aria-expanded={menuOpen}
-            title="Действия"
+            title="Actions"
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();

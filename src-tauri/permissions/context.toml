@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-context"
+description = "Allows reading power and context status for launch exceptions"
+commands.allow = ["get_power_status"]

@@ -1,5 +1,3 @@
-//! Cancel the upcoming / current timed occurrence from the UI.
-
 use chrono::Local;
 use tauri::AppHandle;
 
@@ -8,19 +6,16 @@ use crate::schedule::storage::load_schedules_internal;
 use crate::schedule::toast::apply_skip_side_effects;
 use crate::schedule::window::{get_notify_context, get_schedule_window_context, notify_lead_minutes};
 
-/// Cancel the next due launch for a schedule.
-/// - `always`: marks the current/upcoming occurrence as done (skipped).
-/// - `once`: pauses the schedule (same as a completed one-shot).
 #[tauri::command]
 pub fn cancel_upcoming_launch(app: AppHandle, schedule_id: String) -> Result<bool, String> {
     let schedules = load_schedules_internal(&app)?;
     let schedule = schedules
         .iter()
         .find(|item| item.id == schedule_id)
-        .ok_or_else(|| "Расписание не найдено".to_string())?;
+        .ok_or_else(|| "Schedule not found".to_string())?;
 
     if schedule.mode != "always" && schedule.mode != "once" {
-        return Err("Отмена доступна только для запусков по времени".into());
+        return Err("Cancel is only available for timed launches".into());
     }
 
     if !schedule.enabled {
@@ -37,7 +32,7 @@ pub fn cancel_upcoming_launch(app: AppHandle, schedule_id: String) -> Result<boo
     };
 
     let Some(occurrence_key) = occurrence_key else {
-        return Err("Сейчас нет предстоящего запуска для отмены".into());
+        return Err("There is no upcoming launch to cancel".into());
     };
 
     if schedule.mode == "always" && is_occurrence_fired(&app, &occurrence_key)? {

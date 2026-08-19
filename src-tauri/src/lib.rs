@@ -1,14 +1,18 @@
 mod apps;
 mod boot;
+mod context;
+mod db;
 mod launcher;
+mod ml;
+mod privacy;
+mod process;
 mod schedule;
 mod tray;
 
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Must be registered first so a second launch is redirected, not duplicated.
     let mut builder = tauri::Builder::default().plugin(tauri_plugin_notification::init());
 
     #[cfg(desktop)]
@@ -18,7 +22,7 @@ pub fn run() {
         }));
     }
 
-    builder
+    let app = builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -29,21 +33,25 @@ pub fn run() {
             schedule::storage::load_schedules,
             schedule::storage::save_schedules,
             schedule::cancel::cancel_upcoming_launch,
+            db::db_list_recent_sessions,
+            db::db_insert_session_start,
+            ml::get_habit_suggestions,
+            ml::autostart::load_suggestion_autostarts,
+            ml::autostart::set_suggestion_autostart,
+            privacy::get_privacy_consent,
+            privacy::accept_privacy_consent,
+            privacy::app_quit,
+            context::commands::get_power_status,
         ])
         .setup(|app| {
             #[cfg(desktop)]
             {
                 use tauri_plugin_autostart::MacosLauncher;
-                use tauri_plugin_autostart::ManagerExt;
 
                 app.handle().plugin(tauri_plugin_autostart::init(
                     MacosLauncher::LaunchAgent,
                     Some(vec![boot::autostart_arg().into()]),
                 ))?;
-
-                let autolaunch = app.autolaunch();
-                let _ = autolaunch.disable();
-                let _ = autolaunch.enable();
 
                 tray::create(app.handle())?;
 
@@ -54,6 +62,16 @@ pub fn run() {
                     }
                 }
 
+                match db::open(app.handle()) {
+                    Ok(database) => {
+                        app.manage(database);
+                    }
+                    Err(error) => {
+                        eprintln!("[OnCue] database open failed (usage tracking disabled): {error}");
+                    }
+                }
+
+                process::start(app.handle().clone());
                 schedule::start(app.handle().clone());
             }
 
@@ -75,6 +93,12 @@ pub fn run() {
                 let _ = window.hide();
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        if let RunEvent::ExitRequested { .. } | RunEvent::Exit = event {
+            db::finalize_on_shutdown(app_handle);
+        }
+    });
 }

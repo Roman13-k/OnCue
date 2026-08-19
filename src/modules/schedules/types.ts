@@ -2,10 +2,8 @@ export type ScheduleMode = "boot" | "always" | "once";
 export type NotifyLead = "none" | "15m" | "30m" | "1h";
 export type WeekdayId = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 
-/** Runtime health of the target file. */
 export type ScheduleHealth = "ok" | "error";
 
-/** Status shown in the UI. */
 export type ScheduleStatus = "active" | "paused" | "error";
 
 export type Schedule = {
@@ -18,7 +16,9 @@ export type Schedule = {
   timeTo: string;
   mode: ScheduleMode;
   notify: NotifyLead;
-  /** User intent: run when scheduler logic is enabled. */
+  skipOnBattery: boolean;
+  isGame: boolean;
+
   enabled: boolean;
   health: ScheduleHealth;
   errorMessage: string | null;
@@ -33,6 +33,8 @@ export type ScheduleFormValues = {
   timeTo: string;
   mode: ScheduleMode;
   notify: NotifyLead;
+  skipOnBattery: boolean;
+  isGame: boolean;
 };
 
 export type PanelState =

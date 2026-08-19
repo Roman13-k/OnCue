@@ -112,13 +112,12 @@ export function TimeField({ id, value, onChange }: TimeFieldProps) {
           )}
         />
       </button>
-
       {open && position
         ? createPortal(
             <div
               ref={popoverRef}
               role="listbox"
-              aria-label="Выбор времени"
+              aria-label="Time picker"
               style={{
                 position: "fixed",
                 top: position.top,
@@ -129,7 +128,7 @@ export function TimeField({ id, value, onChange }: TimeFieldProps) {
               className="z-50 grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-surface-elevated shadow-lg"
             >
               <TimeColumn
-                label="Часы"
+                label="Hours"
                 values={Array.from({ length: 24 }, (_, i) => i)}
                 selected={h}
                 listId={`${listId}-h`}
@@ -139,7 +138,7 @@ export function TimeField({ id, value, onChange }: TimeFieldProps) {
                 }}
               />
               <TimeColumn
-                label="Минуты"
+                label="Minutes"
                 values={[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]}
                 selected={m}
                 listId={`${listId}-m`}
@@ -149,6 +148,7 @@ export function TimeField({ id, value, onChange }: TimeFieldProps) {
                 }}
               />
             </div>,
+
             document.body,
           )
         : null}

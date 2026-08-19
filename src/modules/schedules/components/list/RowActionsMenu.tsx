@@ -76,13 +76,13 @@ export function RowActionsMenu({
     <div
       ref={ref}
       role="menu"
-      aria-label="Действия с расписанием"
+      aria-label="Schedule actions"
       className="fixed z-50 min-w-[11.5rem] overflow-hidden rounded-lg border border-border bg-surface-elevated py-1 shadow-lg"
       style={{ left: menu.x, top: menu.y }}
     >
       <MenuItem
         icon={<IconEdit />}
-        label="Редактировать"
+        label="Edit"
         onClick={() => {
           onEdit(schedule);
           onClose();
@@ -90,7 +90,7 @@ export function RowActionsMenu({
       />
       <MenuItem
         icon={paused ? <IconPlay /> : <IconPause />}
-        label={paused ? "Возобновить" : "Пауза"}
+        label={paused ? "Resume" : "Pause"}
         onClick={() => {
           onTogglePause(schedule);
           onClose();
@@ -99,7 +99,7 @@ export function RowActionsMenu({
       {canCancelUpcoming ? (
         <MenuItem
           icon={<IconClose />}
-          label="Отменить запуск"
+          label="Cancel launch"
           onClick={() => {
             onCancelUpcoming(schedule);
             onClose();
@@ -109,7 +109,7 @@ export function RowActionsMenu({
       <div className="my-1 border-t border-border-subtle" />
       <MenuItem
         icon={<IconTrash />}
-        label="Удалить"
+        label="Delete"
         danger
         onClick={() => {
           onDelete(schedule);

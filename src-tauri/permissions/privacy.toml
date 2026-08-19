@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-privacy"
+description = "Allows reading/writing local privacy consent and quitting the app"
+commands.allow = ["get_privacy_consent", "accept_privacy_consent", "app_quit"]

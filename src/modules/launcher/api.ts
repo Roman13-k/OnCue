@@ -17,17 +17,23 @@ export async function isAutostartSession(): Promise<boolean> {
   return invoke<boolean>("is_autostart_session");
 }
 
-/** Runs once per OnCue process when started via OS login (--autostart). */
+export type BootLaunchResponse = {
+  results: LaunchResult[];
+  blocked: number;
+};
+
 export async function runBootLaunches(
   targets: BootLaunchTarget[],
-): Promise<LaunchResult[]> {
-  if (!isTauriRuntime() || targets.length === 0) return [];
-  return invoke<LaunchResult[]>("run_boot_launches", { targets });
+): Promise<BootLaunchResponse> {
+  if (!isTauriRuntime() || targets.length === 0) {
+    return { results: [], blocked: 0 };
+  }
+  return invoke<BootLaunchResponse>("run_boot_launches", { targets });
 }
 
 export async function launchApplication(path: string): Promise<void> {
   if (!isTauriRuntime()) {
-    throw new Error("Запуск доступен только в приложении OnCue");
+    throw new Error("Launch is only available in the OnCue app");
   }
   return invoke("launch_application", { path });
 }

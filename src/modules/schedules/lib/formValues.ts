@@ -7,6 +7,8 @@ export const DEFAULT_FORM_VALUES: ScheduleFormValues = {
   timeTo: "12:00",
   mode: "always",
   notify: "15m",
+  skipOnBattery: false,
+  isGame: false,
 };
 
 export function scheduleToFormValues(schedule: Schedule): ScheduleFormValues {
@@ -17,5 +19,7 @@ export function scheduleToFormValues(schedule: Schedule): ScheduleFormValues {
     timeTo: schedule.timeTo,
     mode: schedule.mode,
     notify: schedule.notify,
+    skipOnBattery: schedule.skipOnBattery,
+    isGame: schedule.isGame,
   };
 }

@@ -15,6 +15,10 @@ pub struct StoredSchedule {
     pub time_to: String,
     pub mode: String,
     pub notify: String,
+    #[serde(default)]
+    pub skip_on_battery: bool,
+    #[serde(default)]
+    pub is_game: bool,
     pub enabled: bool,
     pub health: String,
     pub error_message: Option<String>,
@@ -42,14 +46,14 @@ pub fn load_schedules_internal(app: &AppHandle) -> Result<Vec<StoredSchedule>, S
     }
 
     let raw =
-        fs::read_to_string(&path).map_err(|e| format!("Не удалось прочитать расписания: {e}"))?;
+        fs::read_to_string(&path).map_err(|e| format!("Failed to read schedules: {e}"))?;
 
     if raw.trim().is_empty() {
         return Ok(vec![]);
     }
 
     serde_json::from_str::<Vec<StoredSchedule>>(&raw)
-        .map_err(|e| format!("Не удалось разобрать расписания: {e}"))
+        .map_err(|e| format!("Failed to parse schedules: {e}"))
 }
 
 pub fn save_schedules_internal(
@@ -59,22 +63,22 @@ pub fn save_schedules_internal(
     let path = schedules_file_path(app)?;
     let dir = path
         .parent()
-        .ok_or_else(|| "Не удалось определить папку хранения расписаний".to_string())?;
+        .ok_or_else(|| "Failed to resolve schedules storage folder".to_string())?;
 
     fs::create_dir_all(dir)
-        .map_err(|e| format!("Не удалось создать папку хранения расписаний: {e}"))?;
+        .map_err(|e| format!("Failed to create schedules storage folder: {e}"))?;
 
     let json = serde_json::to_string_pretty(schedules)
-        .map_err(|e| format!("Не удалось сериализовать расписания: {e}"))?;
+        .map_err(|e| format!("Failed to serialize schedules: {e}"))?;
 
-    fs::write(&path, json).map_err(|e| format!("Не удалось сохранить расписания: {e}"))
+    fs::write(&path, json).map_err(|e| format!("Failed to save schedules: {e}"))
 }
 
 fn schedules_file_path(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("Не удалось получить папку данных приложения: {e}"))?;
+        .map_err(|e| format!("Failed to resolve app data folder: {e}"))?;
 
     Ok(app_data_dir.join(STORAGE_DIR).join(STORAGE_FILE))
 }

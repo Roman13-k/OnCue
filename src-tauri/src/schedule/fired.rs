@@ -19,7 +19,7 @@ fn storage_path(app: &AppHandle) -> Result<PathBuf, String> {
     let app_data_dir = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("Не удалось получить папку данных приложения: {e}"))?;
+        .map_err(|e| format!("Failed to resolve app data folder: {e}"))?;
 
     Ok(app_data_dir.join(STORAGE_DIR).join(STORAGE_FILE))
 }
@@ -40,7 +40,7 @@ fn read_store(path: &Path) -> FiredStore {
 fn write_store(path: &Path, store: &FiredStore) -> Result<(), String> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)
-            .map_err(|e| format!("Не удалось создать папку хранения fired keys: {e}"))?;
+            .map_err(|e| format!("Failed to create fired-keys storage folder: {e}"))?;
     }
 
     let now_ms = SystemTime::now()
@@ -58,9 +58,9 @@ fn write_store(path: &Path, store: &FiredStore) -> Result<(), String> {
 
     let pruned = FiredStore { keys };
     let json = serde_json::to_string_pretty(&pruned)
-        .map_err(|e| format!("Не удалось сериализовать fired keys: {e}"))?;
+        .map_err(|e| format!("Failed to serialize fired keys: {e}"))?;
 
-    fs::write(path, json).map_err(|e| format!("Не удалось сохранить fired keys: {e}"))
+    fs::write(path, json).map_err(|e| format!("Failed to save fired keys: {e}"))
 }
 
 fn now_ms() -> u64 {

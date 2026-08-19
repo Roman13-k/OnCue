@@ -118,33 +118,32 @@ export function ScheduleList({
       >
         <SortHeader
           className="pl-9"
-          label="Приложение"
+          label="Application"
           active={sort?.column === "app" ? sort.direction : null}
           onClick={() => toggleSort("app")}
         />
         <SortHeader
-          label="Когда"
+          label="When"
           active={sort?.column === "when" ? sort.direction : null}
           onClick={() => toggleSort("when")}
         />
         <SortHeader
-          label="Режим"
+          label="Mode"
           active={sort?.column === "mode" ? sort.direction : null}
           onClick={() => toggleSort("mode")}
         />
         <SortHeader
-          label="Уведомление"
+          label="Notification"
           active={sort?.column === "notify" ? sort.direction : null}
           onClick={() => toggleSort("notify")}
         />
         <SortHeader
-          label="Статус"
+          label="Status"
           active={sort?.column === "status" ? sort.direction : null}
           onClick={() => toggleSort("status")}
         />
         <span aria-hidden />
       </div>
-
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -169,7 +168,6 @@ export function ScheduleList({
           </ul>
         </SortableContext>
       </DndContext>
-
       {menu && menuSchedule ? (
         <RowActionsMenu
           menu={menu}
@@ -206,10 +204,10 @@ function SortHeader({
       )}
       title={
         active === null
-          ? `Сортировать: ${label}`
+          ? `Sort by: ${label}`
           : active === "asc"
-            ? `Сейчас ${label}: от А до Я. Нажмите для обратной сортировки`
-            : `Сейчас ${label}: от Я до А. Нажмите, чтобы убрать сортировку`
+            ? `Sorted by ${label}: A to Z. Click for reverse order`
+            : `Sorted by ${label}: Z to A. Click to clear sorting`
       }
     >
       <span className="truncate">{label}</span>
@@ -253,5 +251,5 @@ function getSortValue(schedule: Schedule, column: SortColumn): string {
 }
 
 function compareText(left: string, right: string) {
-  return left.localeCompare(right, "ru", { sensitivity: "base", numeric: true });
+  return left.localeCompare(right, "en", { sensitivity: "base", numeric: true });
 }

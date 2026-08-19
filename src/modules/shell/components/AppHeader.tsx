@@ -1,58 +1,140 @@
 import { OnCueLogo } from "../../../shared/brand/OnCueLogo";
 import { cn } from "../../../shared/lib/cn";
-import { IconPlus } from "../../../shared/ui/icons";
+import { IconPlus, IconSettings } from "../../../shared/ui/icons";
+
+export type AppViewMode = "schedules" | "suggestions";
 
 type AppHeaderProps = {
+  mode: AppViewMode;
+  onModeChange: (mode: AppViewMode) => void;
   scheduleCount: number;
+  suggestionCount: number;
   panelOpen: boolean;
+  settingsOpen: boolean;
   onAdd: () => void;
+  onOpenSettings: () => void;
 };
 
-export function AppHeader({ scheduleCount, panelOpen, onAdd }: AppHeaderProps) {
+export function AppHeader({
+  mode,
+  onModeChange,
+  scheduleCount,
+  suggestionCount,
+  panelOpen,
+  settingsOpen,
+  onAdd,
+  onOpenSettings,
+}: AppHeaderProps) {
+  const isSchedules = mode === "schedules";
+
   return (
-    <header className="flex shrink-0 items-center justify-between gap-6 border-b border-border-subtle pb-4">
-      <div className="min-w-0">
-        <div className="flex items-center gap-3">
+    <header className="flex shrink-0 flex-col gap-4 border-b border-border-subtle pb-4">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-3">
           <OnCueLogo className="size-9" />
           <div className="min-w-0">
             <div className="flex items-baseline gap-3">
               <h1 className="text-xl font-semibold tracking-tight text-text-primary">OnCue</h1>
               <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
                 <span className="size-1.5 rounded-full bg-success" aria-hidden />
-                Планировщик работает
+                Scheduler running
               </span>
             </div>
             <p className="mt-1 text-sm text-text-secondary">
-              {scheduleCount === 0
-                ? "Пока нет расписаний"
-                : `${scheduleCount} ${pluralSchedules(scheduleCount)} · перетащите строки, чтобы изменить порядок`}
+              {isSchedules
+                ? scheduleCount === 0
+                  ? "No schedules yet"
+                  : `${scheduleCount} ${pluralSchedules(scheduleCount)} · drag rows to reorder`
+                : suggestionCount === 0
+                  ? "Suggestions based on launch habits"
+                  : `${suggestionCount} ${pluralSuggestions(suggestionCount)} · higher probability ranks higher`}
             </p>
           </div>
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-pressed={settingsOpen}
+            aria-label="Settings"
+            className={cn(
+              "inline-flex size-9 items-center justify-center rounded-lg border transition-colors duration-fast",
+              settingsOpen
+                ? "border-accent/35 bg-accent-soft text-accent-fg"
+                : "border-border-subtle bg-surface text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+            )}
+          >
+            <IconSettings className="size-4" />
+          </button>
+          {isSchedules ? (
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-pressed={panelOpen}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-fast",
+                panelOpen
+                  ? "bg-accent-soft text-accent-fg shadow-xs"
+                  : "bg-accent text-text-inverse shadow-sm hover:bg-accent-hover",
+              )}
+            >
+              <IconPlus className="opacity-90" />
+              Add autostart
+            </button>
+          ) : null}
+        </div>
       </div>
-
-      <button
-        type="button"
-        onClick={onAdd}
-        aria-pressed={panelOpen}
-        className={cn(
-          "inline-flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-fast",
-          panelOpen
-            ? "bg-accent-soft text-accent-fg shadow-xs"
-            : "bg-accent text-text-inverse shadow-sm hover:bg-accent-hover",
-        )}
+      <div
+        role="tablist"
+        aria-label="Sections"
+        className="inline-flex w-fit rounded-lg border border-border-subtle bg-surface-muted p-0.5"
       >
-        <IconPlus className="opacity-90" />
-        Добавить автозапуск
-      </button>
+        <ModeTab
+          active={isSchedules}
+          onClick={() => onModeChange("schedules")}
+          label="Schedules"
+        />
+        <ModeTab
+          active={!isSchedules}
+          onClick={() => onModeChange("suggestions")}
+          label="Suggestions"
+        />
+      </div>
     </header>
   );
 }
 
+function ModeTab({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        "rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors duration-fast",
+        active
+          ? "bg-surface-elevated text-text-primary shadow-xs"
+          : "text-text-muted hover:text-text-secondary",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 function pluralSchedules(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "расписание";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "расписания";
-  return "расписаний";
+  return n === 1 ? "schedule" : "schedules";
+}
+
+function pluralSuggestions(n: number): string {
+  return n === 1 ? "suggestion" : "suggestions";
 }

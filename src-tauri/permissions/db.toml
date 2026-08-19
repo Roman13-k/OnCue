@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-db"
+description = "Allows reading and writing the local SQLite database"
+commands.allow = ["db_list_recent_sessions", "db_insert_session_start"]

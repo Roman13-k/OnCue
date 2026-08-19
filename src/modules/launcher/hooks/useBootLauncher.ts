@@ -2,19 +2,18 @@ import { useEffect, useRef } from "react";
 import type { Schedule } from "../../schedules/types";
 import { isAutostartSession, runBootLaunches } from "../api";
 
-/**
- * After schedules are health-checked, launch boot-mode apps once
- * if this process was started by Windows login (--autostart).
- */
+const BOOT_RETRY_MS = 30_000;
+
 export function useBootLauncher(schedules: Schedule[], ready: boolean) {
-  const started = useRef(false);
+  const done = useRef(false);
 
   useEffect(() => {
-    if (!ready || started.current) return;
+    if (!ready || done.current) return;
 
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    void (async () => {
+    const attempt = async () => {
       const autostart = await isAutostartSession();
       if (!autostart || cancelled) return;
 
@@ -29,21 +28,36 @@ export function useBootLauncher(schedules: Schedule[], ready: boolean) {
         .map((item) => ({ id: item.id, path: item.appPath }));
 
       if (targets.length === 0) {
-        started.current = true;
+        done.current = true;
         return;
       }
 
-      started.current = true;
-      const results = await runBootLaunches(targets);
+      const { results, blocked } = await runBootLaunches(targets);
       for (const result of results) {
         if (!result.ok) {
           console.warn("[OnCue] boot launch failed:", result.path, result.error);
         }
       }
-    })();
+
+      if (cancelled) return;
+
+      if (blocked > 0) {
+        retryTimer = setTimeout(() => {
+          void attempt();
+        }, BOOT_RETRY_MS);
+        return;
+      }
+
+      done.current = true;
+    };
+
+    void attempt();
 
     return () => {
       cancelled = true;
+      if (retryTimer !== undefined) {
+        clearTimeout(retryTimer);
+      }
     };
   }, [ready, schedules]);
 }

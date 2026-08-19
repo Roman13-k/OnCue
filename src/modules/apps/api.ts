@@ -6,24 +6,39 @@ export function isTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-export async function resolveAppTarget(path: string): Promise<AppTargetInfo> {
+export function looksLikeUrl(path: string): boolean {
+  const lower = path.trim().toLowerCase();
+  return (
+    lower.startsWith("http://") ||
+    lower.startsWith("https://") ||
+    lower.startsWith("www.")
+  );
+}
+
+export async function resolveAppTarget(
+  path: string,
+  options?: { fetchIcon?: boolean },
+): Promise<AppTargetInfo> {
   if (!isTauriRuntime()) {
-    throw new Error("Проверка пути доступна только в приложении OnCue (Tauri)");
+    throw new Error("Path checks are only available in the OnCue app (Tauri)");
   }
-  return invoke<AppTargetInfo>("resolve_app_target", { path });
+  return invoke<AppTargetInfo>("resolve_app_target", {
+    path,
+    fetchIcon: options?.fetchIcon ?? false,
+  });
 }
 
 export async function pickAppFile(): Promise<string | null> {
   if (!isTauriRuntime()) {
-    throw new Error("Выбор файла доступен только в приложении OnCue (Tauri)");
+    throw new Error("File picking is only available in the OnCue app (Tauri)");
   }
 
   const selected = await open({
     multiple: false,
-    title: "Выберите приложение",
+    title: "Choose an application",
     filters: [
       {
-        name: "Приложения",
+        name: "Applications",
         extensions: ["exe", "bat", "cmd", "com", "lnk"],
       },
     ],

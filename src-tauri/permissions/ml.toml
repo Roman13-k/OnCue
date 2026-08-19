@@ -1,0 +1,8 @@
+[[permission]]
+identifier = "allow-ml"
+description = "Allows ML habit suggestions and suggestion autostart storage"
+commands.allow = [
+  "get_habit_suggestions",
+  "load_suggestion_autostarts",
+  "set_suggestion_autostart",
+]

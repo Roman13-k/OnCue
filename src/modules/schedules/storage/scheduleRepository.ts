@@ -16,6 +16,8 @@ function isSchedule(value: unknown): value is Schedule {
     typeof item.timeTo === "string" &&
     typeof item.mode === "string" &&
     typeof item.notify === "string" &&
+    (item.skipOnBattery === undefined || typeof item.skipOnBattery === "boolean") &&
+    (item.isGame === undefined || typeof item.isGame === "boolean") &&
     typeof item.enabled === "boolean" &&
     (item.health === "ok" || item.health === "error") &&
     (item.errorMessage === null || typeof item.errorMessage === "string") &&
@@ -25,11 +27,19 @@ function isSchedule(value: unknown): value is Schedule {
 }
 
 export async function loadSchedules(): Promise<Schedule[]> {
-  // In non-tauri runtime (e.g. dev previews), there is no persistence layer.
+
   if (!isTauriRuntime()) return [];
 
   const schedules = await invoke<Schedule[]>("load_schedules");
-  return schedules.filter(isSchedule);
+  return schedules.filter(isSchedule).map(normalizeSchedule);
+}
+
+function normalizeSchedule(item: Schedule): Schedule {
+  return {
+    ...item,
+    skipOnBattery: item.skipOnBattery ?? false,
+    isGame: item.isGame ?? false,
+  };
 }
 
 export async function saveSchedules(schedules: Schedule[]): Promise<void> {
@@ -40,7 +50,6 @@ export async function saveSchedules(schedules: Schedule[]): Promise<void> {
   await invoke("save_schedules", { schedules });
 }
 
-/** Skip the current/upcoming timed occurrence (always → done, once → pause). */
 export async function cancelUpcomingLaunch(scheduleId: string): Promise<boolean> {
   if (!isTauriRuntime()) return false;
   return invoke<boolean>("cancel_upcoming_launch", { scheduleId });

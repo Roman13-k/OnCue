@@ -5,7 +5,6 @@ type OnCueLogoProps = {
   title?: string;
 };
 
-/** Brand mark: punctual cue — vertical signal + forward arc. */
 export function OnCueLogo({ className, title = "OnCue" }: OnCueLogoProps) {
   return (
     <svg

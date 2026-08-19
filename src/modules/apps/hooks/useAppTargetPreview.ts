@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { resolveAppTarget } from "../api";
+import { looksLikeUrl, resolveAppTarget } from "../api";
 import type { AppTargetPreviewState } from "../types";
 
 const DEBOUNCE_MS = 320;
@@ -18,9 +18,21 @@ export function useAppTargetPreview(path: string): AppTargetPreviewState {
     setState({ status: "loading" });
 
     const timer = window.setTimeout(() => {
-      void resolveAppTarget(trimmed)
-        .then((info) => {
-          if (!cancelled) setState({ status: "ready", info });
+      const isUrl = looksLikeUrl(trimmed);
+      void resolveAppTarget(trimmed, { fetchIcon: !isUrl })
+        .then(async (info) => {
+          if (cancelled) return;
+          setState({ status: "ready", info });
+
+          if (!isUrl || info.iconDataUrl) return;
+          try {
+            const withIcon = await resolveAppTarget(trimmed, { fetchIcon: true });
+            if (!cancelled && withIcon.iconDataUrl) {
+              setState({ status: "ready", info: withIcon });
+            }
+          } catch {
+            // Keep icon-less preview; network failures must not block the form.
+          }
         })
         .catch((err: unknown) => {
           if (cancelled) return;
@@ -29,7 +41,7 @@ export function useAppTargetPreview(path: string): AppTargetPreviewState {
               ? err.message
               : typeof err === "string"
                 ? err
-                : "Не удалось проверить путь";
+                : "Couldn’t verify path";
           setState({ status: "error", message });
         });
     }, DEBOUNCE_MS);

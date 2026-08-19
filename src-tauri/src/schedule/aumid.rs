@@ -1,19 +1,14 @@
-//! Register an unpackaged AppUserModelID so WinRT toasts show as OnCue, not PowerShell.
-
 use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use tauri::{AppHandle, Manager};
 
-/// Must match `identifier` in tauri.conf.json.
 pub const AUMID: &str = "com.oncue.app";
 const DISPLAY_NAME: &str = "OnCue";
 
 static TOAST_ICON_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-/// Write the app icon into app data and register HKCU AUMID (DisplayName + IconUri).
-/// Safe to call every launch; idempotent.
 pub fn ensure_registered(app: &AppHandle) -> Result<(), String> {
     let icon_path = ensure_toast_icon(app)?;
     register_aumid(&icon_path)?;
@@ -29,17 +24,16 @@ fn ensure_toast_icon(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("Не удалось получить папку данных: {e}"))?
+        .map_err(|e| format!("Failed to resolve app data folder: {e}"))?
         .join("toast");
 
-    fs::create_dir_all(&dir).map_err(|e| format!("Не удалось создать папку toast: {e}"))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Failed to create toast folder: {e}"))?;
 
     let icon_path = dir.join("icon.png");
-    // Refresh each launch so icon updates from the binary always apply.
-    fs::write(&icon_path, include_bytes!("../../icons/icon.png"))
-        .map_err(|e| format!("Не удалось сохранить иконку уведомлений: {e}"))?;
 
-    // Absolute path without `\\?\` — required by WinRT toast IconUri / icon().
+    fs::write(&icon_path, include_bytes!("../../icons/icon.png"))
+        .map_err(|e| format!("Failed to save notification icon: {e}"))?;
+
     let absolute = icon_path
         .canonicalize()
         .unwrap_or(icon_path);
@@ -55,16 +49,16 @@ fn register_aumid(icon_path: &std::path::Path) -> Result<(), String> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let (key, _) = hkcu
         .create_subkey(format!(r"Software\Classes\AppUserModelId\{AUMID}"))
-        .map_err(|e| format!("Не удалось зарегистрировать AUMID: {e}"))?;
+        .map_err(|e| format!("Failed to register AUMID: {e}"))?;
 
     key.set_value("DisplayName", &DISPLAY_NAME)
-        .map_err(|e| format!("Не удалось задать DisplayName: {e}"))?;
+        .map_err(|e| format!("Failed to set DisplayName: {e}"))?;
     key.set_value("IconBackgroundColor", &"0")
-        .map_err(|e| format!("Не удалось задать IconBackgroundColor: {e}"))?;
+        .map_err(|e| format!("Failed to set IconBackgroundColor: {e}"))?;
 
     let icon_uri = icon_path.to_string_lossy().to_string();
     key.set_value("IconUri", &icon_uri)
-        .map_err(|e| format!("Не удалось задать IconUri: {e}"))?;
+        .map_err(|e| format!("Failed to set IconUri: {e}"))?;
 
     Ok(())
 }

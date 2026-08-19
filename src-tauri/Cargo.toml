@@ -24,8 +24,12 @@ base64 = "0.22"
 chrono = { version = "0.4", features = ["clock"] }
 tauri-plugin-single-instance = "2.4.3"
 tauri-plugin-notification = "2"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+sysinfo = "0.39.6"
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-icons = "0.3"
 tauri-winrt-notification = "0.7"
+windows = { version = "0.62", features = ["Win32_System_Power"] }
 winreg = "0.55"

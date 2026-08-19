@@ -6,7 +6,11 @@ use std::time::Duration;
 use chrono::{Local, Utc};
 use tauri::{AppHandle, Emitter};
 
+use crate::context::{
+    is_any_game_running, is_launch_blocked, is_on_battery, is_suggestion_launch_blocked,
+};
 use crate::launcher::launch_path;
+use crate::ml::{load_autostarts_internal, autostart::resolve_suggestion_occurrence_key};
 use crate::schedule::fired::{is_occurrence_fired, mark_occurrence_fired};
 use crate::schedule::storage::{load_schedules_internal, save_schedules_internal, StoredSchedule};
 use crate::schedule::toast::{
@@ -22,7 +26,7 @@ struct SchedulerState {
     once_armed: HashMap<String, bool>,
     prev_enabled: HashMap<String, bool>,
     in_flight: HashSet<String>,
-    /// Occurrence keys that already showed a toast this session.
+
     notified: HashSet<String>,
 }
 
@@ -46,6 +50,11 @@ enum PendingLaunch {
     Once {
         id: String,
         path: String,
+    },
+    Suggestion {
+        id: String,
+        path: String,
+        occurrence_key: String,
     },
 }
 
@@ -73,6 +82,8 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
     }
 
     let now = Local::now();
+    let on_battery = is_on_battery();
+    let game_active = is_any_game_running(&schedules);
     let mut pending = Vec::new();
     let mut notices = Vec::new();
 
@@ -87,15 +98,61 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
             collect_notified_launch(
                 app,
                 state,
+                &schedules,
                 schedule,
                 now,
                 lead_minutes,
+                on_battery,
+                game_active,
                 &mut notices,
                 &mut pending,
             )?;
         } else {
-            collect_immediate_launch(app, state, schedule, now, &mut pending)?;
+            collect_immediate_launch(
+                app,
+                state,
+                &schedules,
+                schedule,
+                now,
+                on_battery,
+                game_active,
+                &mut pending,
+            )?;
         }
+    }
+
+    let autostarts = load_autostarts_internal(app)?;
+    for item in &autostarts {
+        if !item.enabled || item.app_path.trim().is_empty() {
+            continue;
+        }
+
+        if is_suggestion_launch_blocked(game_active) {
+            continue;
+        }
+
+        let Some(occurrence_key) = resolve_suggestion_occurrence_key(now, item) else {
+            continue;
+        };
+
+        {
+            let guard = state
+                .lock()
+                .map_err(|_| "scheduler state lock poisoned".to_string())?;
+            if guard.in_flight.contains(&item.id) {
+                continue;
+            }
+        }
+
+        if is_occurrence_fired(app, &occurrence_key)? {
+            continue;
+        }
+
+        pending.push(PendingLaunch::Suggestion {
+            id: item.id.clone(),
+            path: item.app_path.clone(),
+            occurrence_key,
+        });
     }
 
     for notice in notices {
@@ -113,6 +170,8 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
     }
 
     let mut schedules_changed = false;
+    let on_battery_now = is_on_battery();
+    let game_active_now = is_any_game_running(&schedules);
 
     for launch in pending {
         match launch {
@@ -121,6 +180,16 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
                 path,
                 occurrence_key,
             } => {
+                if schedules
+                    .iter()
+                    .find(|schedule| schedule.id == id)
+                    .is_some_and(|schedule| {
+                        is_launch_blocked(&schedules, schedule, on_battery_now, game_active_now)
+                    })
+                {
+                    continue;
+                }
+
                 {
                     let mut guard = state
                         .lock()
@@ -142,6 +211,16 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
                 }
             }
             PendingLaunch::Once { id, path } => {
+                if schedules
+                    .iter()
+                    .find(|schedule| schedule.id == id)
+                    .is_some_and(|schedule| {
+                        is_launch_blocked(&schedules, schedule, on_battery_now, game_active_now)
+                    })
+                {
+                    continue;
+                }
+
                 {
                     let mut guard = state
                         .lock()
@@ -162,6 +241,35 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
                     schedules_changed = true;
                 }
             }
+            PendingLaunch::Suggestion {
+                id,
+                path,
+                occurrence_key,
+            } => {
+                if is_suggestion_launch_blocked(game_active_now) {
+                    continue;
+                }
+
+                {
+                    let mut guard = state
+                        .lock()
+                        .map_err(|_| "scheduler state lock poisoned".to_string())?;
+                    guard.in_flight.insert(id.clone());
+                }
+
+                match launch_path(&path) {
+                    Ok(()) => {
+                        mark_occurrence_fired(app, &occurrence_key)?;
+                    }
+                    Err(error) => {
+                        eprintln!("[OnCue] suggestion autostart failed for {id}: {error}");
+                    }
+                }
+
+                if let Ok(mut guard) = state.lock() {
+                    guard.in_flight.remove(&id);
+                }
+            }
         }
     }
 
@@ -176,10 +284,17 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
 fn collect_immediate_launch(
     app: &AppHandle,
     state: &Arc<Mutex<SchedulerState>>,
+    schedules: &[StoredSchedule],
     schedule: &StoredSchedule,
     now: chrono::DateTime<Local>,
+    on_battery: bool,
+    game_active: bool,
     pending: &mut Vec<PendingLaunch>,
 ) -> Result<(), String> {
+    if is_launch_blocked(schedules, schedule, on_battery, game_active) {
+        return Ok(());
+    }
+
     let ctx = get_schedule_window_context(now, schedule);
     if !ctx.in_window {
         return Ok(());
@@ -196,9 +311,12 @@ fn collect_immediate_launch(
 fn collect_notified_launch(
     app: &AppHandle,
     state: &Arc<Mutex<SchedulerState>>,
+    schedules: &[StoredSchedule],
     schedule: &StoredSchedule,
     now: chrono::DateTime<Local>,
     lead_minutes: u32,
+    on_battery: bool,
+    game_active: bool,
     notices: &mut Vec<LaunchNotice>,
     pending: &mut Vec<PendingLaunch>,
 ) -> Result<(), String> {
@@ -206,11 +324,11 @@ fn collect_notified_launch(
         return Ok(());
     }
 
+    let blocked = is_launch_blocked(schedules, schedule, on_battery, game_active);
     let notify_ctx = get_notify_context(now, schedule, lead_minutes);
     let window_ctx = get_schedule_window_context(now, schedule);
 
-    // Heads-up toast once per occurrence (lead time or catch-up in window).
-    if notify_ctx.should_notify {
+    if !blocked && notify_ctx.should_notify {
         if let Some(occurrence_key) = notify_ctx.occurrence_key.clone() {
             let already_done = schedule.mode == "always"
                 && is_occurrence_fired(app, &occurrence_key)?;
@@ -245,8 +363,7 @@ fn collect_notified_launch(
         }
     }
 
-    // Launch only when the real time window starts — not when the user presses Окей.
-    if !window_ctx.in_window {
+    if blocked || !window_ctx.in_window {
         return Ok(());
     }
 

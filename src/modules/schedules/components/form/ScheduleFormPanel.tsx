@@ -2,6 +2,7 @@ import type { AppTargetInfo } from "../../../apps/types";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { AppTargetPreview, pickAppFile, useAppTargetPreview } from "../../../apps";
 import { cn } from "../../../../shared/lib/cn";
+import { CheckboxField } from "../../../../shared/ui/Checkbox";
 import { IconCheck, IconClose, IconFolder } from "../../../../shared/ui/icons";
 import { TimeField } from "../../../../shared/ui/TimeField";
 import { DEFAULT_FORM_VALUES } from "../../lib/formValues";
@@ -18,9 +19,9 @@ type ScheduleFormPanelProps = {
 };
 
 const MODE_OPTIONS: { id: ScheduleMode; title: string; hint: string }[] = [
-  { id: "always", title: "По расписанию", hint: "В выбранные дни и интервал времени" },
-  { id: "once", title: "Один раз", hint: "Сработает в указанное время и отключится" },
-  { id: "boot", title: "При запуске ПК", hint: "Сразу после включения компьютера" },
+  { id: "always", title: "On schedule", hint: "On selected days within a time range" },
+  { id: "once", title: "Once", hint: "Runs at the set time, then turns off" },
+  { id: "boot", title: "At PC startup", hint: "Right after the computer turns on" },
 ];
 
 export function ScheduleFormPanel({
@@ -85,7 +86,7 @@ export function ScheduleFormPanel({
           ? err.message
           : typeof err === "string"
             ? err
-            : "Не удалось открыть проводник";
+            : "Couldn’t open the file picker";
       setBrowseError(message);
     } finally {
       setBrowsing(false);
@@ -94,18 +95,18 @@ export function ScheduleFormPanel({
 
   function handleSave() {
     if (needsSchedule && values.dayIds.length === 0) {
-      setFormError("Выберите хотя бы один день недели");
+      setFormError("Select at least one weekday");
       return;
     }
     if (preview.status === "loading") {
-      setFormError("Подождите, проверяем путь к приложению…");
+      setFormError("Please wait — verifying the app path…");
       return;
     }
     if (preview.status !== "ready") {
       setFormError(
         preview.status === "error"
           ? preview.message
-          : "Укажите существующий файл приложения",
+          : "Choose an existing application file or website URL",
       );
       return;
     }
@@ -114,7 +115,6 @@ export function ScheduleFormPanel({
       ? values
       : {
           ...values,
-          // Boot mode: schedule fields are irrelevant for launch logic.
           dayIds: [],
           timeFrom: "00:00",
           timeTo: "00:00",
@@ -130,9 +130,9 @@ export function ScheduleFormPanel({
     }
   }
 
-  const title = mode === "create" ? "Новый автозапуск" : "Редактирование";
+  const title = mode === "create" ? "New autostart" : "Edit";
   const subtitle =
-    mode === "create" ? "Приложение и режим запуска" : "Измените параметры запуска";
+    mode === "create" ? "App and launch mode" : "Change launch settings";
 
   return (
     <aside className="panel-enter flex h-full min-h-0 w-full flex-col overflow-hidden bg-surface-elevated">
@@ -144,15 +144,14 @@ export function ScheduleFormPanel({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label="Close"
           className="inline-flex size-8 cursor-pointer items-center justify-center rounded-md text-text-muted transition-colors duration-fast hover:bg-surface-muted hover:text-text-primary"
         >
           <IconClose />
         </button>
       </div>
-
       <div className="scroll-thin min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-4 py-3.5">
-        <Field label="Приложение" htmlFor={`${formId}-path`}>
+        <Field label="Application" htmlFor={`${formId}-path`}>
           <div className="flex gap-2">
             <input
               id={`${formId}-path`}
@@ -162,7 +161,7 @@ export function ScheduleFormPanel({
                 setBrowseError(null);
                 patch({ appPath: e.target.value });
               }}
-              placeholder="Путь к .exe или вставьте сюда…"
+              placeholder="Path to .exe or https://…"
               spellCheck={false}
               className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2.5 py-2 text-sm text-text-primary shadow-xs placeholder:text-text-muted transition-colors duration-fast hover:border-border-strong focus:border-accent"
             />
@@ -173,31 +172,28 @@ export function ScheduleFormPanel({
               className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-surface-elevated px-2.5 py-2 text-sm font-medium text-text-secondary shadow-xs transition-colors duration-fast hover:bg-surface-hover disabled:cursor-wait disabled:opacity-60"
             >
               <IconFolder />
-              {browsing ? "…" : "Обзор"}
+              {browsing ? "…" : "Browse"}
             </button>
           </div>
-
           {browseError ? (
             <p role="alert" className="mt-2 text-xs text-danger">
               {browseError}
             </p>
           ) : (
             <p className="mt-1.5 text-xs text-text-muted">
-              Выберите файл в проводнике или вставьте полный путь
+              Pick an app file, or paste a website URL (https://…)
             </p>
           )}
 
           <AppTargetPreview state={preview} />
-
           {hasDuplicateApp ? (
             <p className="mt-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              Это приложение уже добавлено. Можно сохранить, но правило будет дублироваться.
+              This app is already added. You can still save, but the rule will be duplicated.
             </p>
           ) : null}
         </Field>
-
-        <Field label="Режим запуска">
-          <div role="radiogroup" aria-label="Режим запуска" className="space-y-1.5">
+        <Field label="Launch mode">
+          <div role="radiogroup" aria-label="Launch mode" className="space-y-1.5">
             {MODE_OPTIONS.map((opt) => (
               <ModeOption
                 key={opt.id}
@@ -209,10 +205,9 @@ export function ScheduleFormPanel({
             ))}
           </div>
         </Field>
-
         {needsSchedule ? (
           <>
-            <Field label="Дни недели">
+            <Field label="Weekdays">
               <div className="flex flex-wrap gap-1">
                 {WEEKDAYS.map((day) => {
                   const selected = values.dayIds.includes(day.id);
@@ -235,16 +230,15 @@ export function ScheduleFormPanel({
                 })}
               </div>
             </Field>
-
             <div className="grid grid-cols-2 gap-2.5">
-              <Field label="С" htmlFor={`${formId}-from`}>
+              <Field label="From" htmlFor={`${formId}-from`}>
                 <TimeField
                   id={`${formId}-from`}
                   value={values.timeFrom}
                   onChange={(timeFrom) => patch({ timeFrom })}
                 />
               </Field>
-              <Field label="До" htmlFor={`${formId}-to`}>
+              <Field label="To" htmlFor={`${formId}-to`}>
                 <TimeField
                   id={`${formId}-to`}
                   value={values.timeTo}
@@ -252,15 +246,14 @@ export function ScheduleFormPanel({
                 />
               </Field>
             </div>
-
-            <Field label="Напомнить">
+            <Field label="Remind">
               <div className="flex flex-wrap gap-1">
                 {(
                   [
-                    { id: "none", label: "Нет" },
-                    { id: "15m", label: "15 мин" },
-                    { id: "30m", label: "30 мин" },
-                    { id: "1h", label: "1 час" },
+                    { id: "none", label: "None" },
+                    { id: "15m", label: "15 min" },
+                    { id: "30m", label: "30 min" },
+                    { id: "1h", label: "1 hour" },
                   ] as const
                 ).map((opt) => {
                   const selected = values.notify === opt.id;
@@ -286,9 +279,26 @@ export function ScheduleFormPanel({
           </>
         ) : (
           <p className="rounded-md border border-border-subtle bg-surface px-3 py-2.5 text-sm text-text-secondary">
-            Приложение будет запускаться при каждом включении ПК
+            The app will launch every time the PC starts
           </p>
         )}
+
+        <Field label="Exceptions">
+          <div className="space-y-2.5 rounded-lg border border-border-subtle bg-surface px-3 py-3">
+            <CheckboxField
+              checked={values.skipOnBattery}
+              onChange={(skipOnBattery) => patch({ skipOnBattery })}
+              title="Skip on battery"
+              hint="Do not launch while the laptop is unplugged"
+            />
+            <CheckboxField
+              checked={values.isGame}
+              onChange={(isGame) => patch({ isGame })}
+              title="This is a game"
+              hint="While this app is running, other scheduled launches wait until it closes"
+            />
+          </div>
+        </Field>
 
         {formError ? (
           <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
@@ -296,14 +306,13 @@ export function ScheduleFormPanel({
           </p>
         ) : null}
       </div>
-
       <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-subtle px-4 py-3">
         <button
           type="button"
           onClick={onClose}
           className="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-text-secondary transition-colors duration-fast hover:bg-surface-muted"
         >
-          Отмена
+          Cancel
         </button>
         <button
           type="button"
@@ -311,7 +320,7 @@ export function ScheduleFormPanel({
           onClick={handleSave}
           className="cursor-pointer rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-text-inverse shadow-sm transition-colors duration-fast hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {mode === "create" ? "Сохранить" : "Обновить"}
+          {mode === "create" ? "Save" : "Update"}
         </button>
       </div>
     </aside>
@@ -374,6 +383,7 @@ function ModeOption({
         aria-hidden
       >
         {selected ? <IconCheck className="size-3" /> : null}
+
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-medium text-text-primary">{title}</span>
