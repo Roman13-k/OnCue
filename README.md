@@ -1,42 +1,42 @@
 # OnCue
 
-Лёгкая Windows-утилита для автоматического запуска приложений по расписанию.
+A lightweight Windows utility that launches apps on schedule and in response to your workflow.
 
-**OnCue** (от _on cue_ — «по сигналу / вовремя») запускает программы по дням недели и окнам времени, с уведомлениями заранее и возможностью отменить запуск.
+**OnCue** (from _on cue_ — right on time) runs programs by day and time window, sends advance notifications, and lets you cancel a launch before it happens. It also learns local usage habits, suggests new rules, and can chain companion apps when a trigger starts.
 
-## Что умеет (MVP)
+## Features
 
-- Правила: приложение + дни + интервал времени + режим запуска
-- Уведомления перед запуском (1 ч / 30 мин / 15 мин)
-- Отмена из приложения и из уведомления
-- Автозапуск OnCue вместе с Windows и работа в фоне
-- Без обязательного интернета
+- **Schedules** — app + days + time window + launch mode
+- **Sequences** — when a trigger app starts, launch an ordered list of companion apps (with cooldown and context gates)
+- **Notifications** — advance warning (1 h / 30 min / 15 min) with cancel from the app or the notification
+- **Habit suggestions** — local usage stats (opt-in) and confidence-scored rule proposals
+- **Context gates** — skip on battery, block while a game is running
+- **Settings** — launch OnCue with Windows, background tray operation
+- **Offline-first** — no internet required for core features
 
-## Стек
+## Stack
 
 - [Tauri 2](https://tauri.app/) + Rust
 - React + TypeScript + Vite + Tailwind
 
-## Установка
+## Install
 
-Скачайте установщик из [Releases](https://github.com/Roman13-k/OnCue/releases):
+Download an installer from [Releases](https://github.com/Roman13-k/OnCue/releases):
 
-- `OnCue_*_x64-setup.exe` — NSIS-установщик (рекомендуется)
+- `OnCue_*_x64-setup.exe` — NSIS installer (recommended)
 - `OnCue_*_x64_en-US.msi` — MSI
 
-## Разработка
+## Development
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-Сборка релиза:
+Release build:
 
 ```bash
 npm run tauri build
 ```
 
-## Планы
-
-См. [OnCue-plan.md](./OnCue-plan.md) — локальный ИИ-слой на основе привычек, сценарии дня и умные исключения.
+Artifacts are written to `src-tauri/target/release/bundle/`.

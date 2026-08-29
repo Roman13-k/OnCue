@@ -31,7 +31,6 @@ export function useAppTargetPreview(path: string): AppTargetPreviewState {
               setState({ status: "ready", info: withIcon });
             }
           } catch {
-            // Keep icon-less preview; network failures must not block the form.
           }
         })
         .catch((err: unknown) => {

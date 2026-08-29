@@ -15,7 +15,6 @@ use super::storage::load_sequences_internal;
 const POLL_SECS: u64 = 4;
 
 struct WatcherState {
-    /// Baseline PIDs per sequence after the first poll (avoids firing for apps already open at startup).
     seen_trigger_pids: HashMap<String, HashSet<u32>>,
     primed: HashSet<String>,
     last_fired_at: HashMap<String, Instant>,

@@ -1,6 +1,6 @@
 [package]
 name = "oncue"
-version = "0.1.0"
+version = "1.2.0"
 description = "OnCue — app scheduler for Windows"
 authors = ["you"]
 edition = "2021"
