@@ -239,6 +239,25 @@ export function IconBattery({ className }: IconProps) {
   );
 }
 
+export function IconLayers({ className }: IconProps) {
+  return (
+    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m12 12 8-4.5M12 12v8M12 12 4 7.5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconGamepad({ className }: IconProps) {
   return (
     <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>

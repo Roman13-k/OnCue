@@ -3,6 +3,8 @@ mod sampler;
 
 pub use sampler::{sample_once, start};
 
+use std::collections::HashSet;
+
 use sysinfo::{ProcessesToUpdate, System};
 
 #[derive(Debug, Clone)]
@@ -45,14 +47,10 @@ pub fn find_processes(needle: &str) -> Vec<ProcessInfo> {
         .collect()
 }
 
-pub fn is_app_running(app_path: &str) -> bool {
+pub fn matching_pids(app_path: &str) -> HashSet<u32> {
     let trimmed = app_path.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-
-    if crate::apps::looks_like_url(trimmed) {
-        return false;
+    if trimmed.is_empty() || crate::apps::looks_like_url(trimmed) {
+        return HashSet::new();
     }
 
     let target = normalize_path(trimmed);
@@ -61,41 +59,61 @@ pub fn is_app_running(app_path: &str) -> bool {
         .as_ref()
         .and_then(|name| name.strip_suffix(".exe").map(str::to_string));
 
-    list_processes().into_iter().any(|process| {
-        if let Some(exe) = process.exe_path.as_deref().filter(|path| !path.is_empty()) {
-            let running = normalize_path(exe);
-            if running == target {
-                return true;
-            }
-            if let Some(ref name) = target_file {
-                if running.ends_with(&format!("\\{name}")) {
-                    return true;
+    let mut system = System::new();
+    system.refresh_processes(ProcessesToUpdate::All, true);
+
+    system
+        .processes()
+        .iter()
+        .filter_map(|(pid, process)| {
+            let matches = if let Some(exe) = process.exe().map(|p| p.to_string_lossy().into_owned()) {
+                if exe.is_empty() {
+                    false
+                } else {
+                    let running = normalize_path(&exe);
+                    if running == target {
+                        true
+                    } else if let Some(ref name) = target_file {
+                        running.ends_with(&format!("\\{name}"))
+                    } else {
+                        false
+                    }
                 }
-            }
-            return false;
-        }
+            } else {
+                let proc_name = process.name().to_string_lossy().to_lowercase();
+                if let Some(ref name) = target_file {
+                    if proc_name == *name {
+                        return Some(pid.as_u32());
+                    }
+                }
+                if let Some(ref stem) = target_stem {
+                    proc_name == *stem || proc_name == format!("{stem}.exe")
+                } else {
+                    false
+                }
+            };
 
-        let proc_name = process.name.to_lowercase();
-        if let Some(ref name) = target_file {
-            if proc_name == *name {
-                return true;
-            }
-        }
-        if let Some(ref stem) = target_stem {
-            if proc_name == *stem || proc_name == format!("{stem}.exe") {
-                return true;
-            }
-        }
+            if matches { Some(pid.as_u32()) } else { None }
+        })
+        .collect()
+}
 
-        false
-    })
+pub fn is_app_running(app_path: &str) -> bool {
+    !matching_pids(app_path).is_empty()
 }
 
 fn executable_file_name(path: &str) -> Option<String> {
-    std::path::Path::new(path)
+    let name = std::path::Path::new(path)
         .file_name()
         .and_then(|name| name.to_str())
-        .map(|name| name.to_lowercase())
+        .map(|name| name.to_lowercase())?;
+
+    // Shortcuts are matched by the usual exe name (Steam.lnk → steam.exe).
+    if let Some(stem) = name.strip_suffix(".lnk") {
+        return Some(format!("{stem}.exe"));
+    }
+
+    Some(name)
 }
 
 pub(crate) fn normalize_path(path: &str) -> String {

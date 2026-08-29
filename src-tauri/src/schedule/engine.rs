@@ -10,7 +10,7 @@ use crate::context::{
     is_any_game_running, is_launch_blocked, is_on_battery, is_suggestion_launch_blocked,
 };
 use crate::launcher::launch_path;
-use crate::ml::{load_autostarts_internal, autostart::resolve_suggestion_occurrence_key};
+use crate::ml::{autostart::resolve_suggestion_occurrence_key, load_autostarts_internal};
 use crate::schedule::fired::{is_occurrence_fired, mark_occurrence_fired};
 use crate::schedule::storage::{load_schedules_internal, save_schedules_internal, StoredSchedule};
 use crate::schedule::toast::{
@@ -19,6 +19,7 @@ use crate::schedule::toast::{
 use crate::schedule::window::{
     get_notify_context, get_schedule_window_context, notify_lead_minutes,
 };
+use crate::sequences::load_sequences_internal;
 
 const TICK_SECS: u64 = 5;
 
@@ -73,6 +74,7 @@ pub fn start(app: AppHandle) {
 
 fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), String> {
     let mut schedules = load_schedules_internal(app)?;
+    let sequences = load_sequences_internal(app)?;
 
     {
         let mut guard = state
@@ -83,7 +85,7 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
 
     let now = Local::now();
     let on_battery = is_on_battery();
-    let game_active = is_any_game_running(&schedules);
+    let game_active = is_any_game_running(&schedules, &sequences);
     let mut pending = Vec::new();
     let mut notices = Vec::new();
 
@@ -171,7 +173,7 @@ fn tick(app: &AppHandle, state: &Arc<Mutex<SchedulerState>>) -> Result<(), Strin
 
     let mut schedules_changed = false;
     let on_battery_now = is_on_battery();
-    let game_active_now = is_any_game_running(&schedules);
+    let game_active_now = is_any_game_running(&schedules, &sequences);
 
     for launch in pending {
         match launch {

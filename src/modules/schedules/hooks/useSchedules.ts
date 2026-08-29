@@ -59,18 +59,15 @@ export function useSchedules() {
     [],
   );
 
-  const create = useCallback(
-    (values: ScheduleFormValues, app: AppTargetInfo) => {
-      const item = createSchedule(values, app);
-      setSchedules((prev) => {
-        const next = [...prev, item];
-        void saveSchedules(next);
-        return next;
-      });
-      return item;
-    },
-    [],
-  );
+  const create = useCallback((values: ScheduleFormValues, app: AppTargetInfo) => {
+    const item = createSchedule(values, app);
+    setSchedules((prev) => {
+      const next = [...prev, item];
+      void saveSchedules(next);
+      return next;
+    });
+    return item;
+  }, []);
 
   const update = useCallback(
     (id: string, values: ScheduleFormValues, app: AppTargetInfo) => {
@@ -128,4 +125,3 @@ export function useSchedules() {
     revalidate,
   };
 }
-

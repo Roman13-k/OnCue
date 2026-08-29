@@ -19,11 +19,19 @@ pub struct StoredSchedule {
     pub skip_on_battery: bool,
     #[serde(default)]
     pub is_game: bool,
+    #[serde(default = "default_target_kind")]
+    pub target_kind: String,
+    #[serde(default)]
+    pub sequence_id: Option<String>,
     pub enabled: bool,
     pub health: String,
     pub error_message: Option<String>,
     pub created_at: String,
-    pub updated_at: String,
+    pub     updated_at: String,
+}
+
+fn default_target_kind() -> String {
+    "app".to_string()
 }
 
 const STORAGE_DIR: &str = "storage";

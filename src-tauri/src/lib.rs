@@ -7,6 +7,7 @@ mod ml;
 mod privacy;
 mod process;
 mod schedule;
+mod sequences;
 mod tray;
 
 use tauri::{Manager, RunEvent};
@@ -33,6 +34,9 @@ pub fn run() {
             schedule::storage::load_schedules,
             schedule::storage::save_schedules,
             schedule::cancel::cancel_upcoming_launch,
+            sequences::storage::load_sequences,
+            sequences::storage::save_sequences,
+            sequences::runner::run_sequence_now,
             db::db_list_recent_sessions,
             db::db_insert_session_start,
             ml::get_habit_suggestions,
@@ -73,6 +77,7 @@ pub fn run() {
 
                 process::start(app.handle().clone());
                 schedule::start(app.handle().clone());
+                sequences::start_watcher(app.handle().clone());
             }
 
             if let Some(window) = app.get_webview_window("main") {

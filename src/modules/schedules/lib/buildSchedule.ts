@@ -59,10 +59,7 @@ export function markScheduleError(schedule: Schedule, message: string): Schedule
   };
 }
 
-export function markScheduleHealthy(
-  schedule: Schedule,
-  app: AppTargetInfo,
-): Schedule {
+export function markScheduleHealthy(schedule: Schedule, app: AppTargetInfo): Schedule {
   return {
     ...schedule,
     appName: app.name,

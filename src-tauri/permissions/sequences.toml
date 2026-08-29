@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-sequences"
+description = "Allows loading, saving, and running launch sequences"
+commands.allow = ["load_sequences", "save_sequences", "run_sequence_now"]

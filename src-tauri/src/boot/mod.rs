@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::sync::{Mutex, OnceLock};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Mutex, OnceLock};
 
 use crate::context::{is_any_game_running, is_launch_blocked, is_on_battery};
 use crate::launcher::{launch_path, LaunchResult};
 use crate::schedule::storage::load_schedules_internal;
+use crate::sequences::load_sequences_internal;
 
 static BOOT_LAUNCHES_DONE: AtomicBool = AtomicBool::new(false);
 static LAUNCHED_BOOT_IDS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
@@ -16,7 +17,6 @@ const AUTOSTART_ARG: &str = "--autostart";
 #[serde(rename_all = "camelCase")]
 pub struct BootLaunchTarget {
     pub id: String,
-    pub path: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,8 +62,9 @@ pub fn run_boot_launches(
 
     let launched_ids = LAUNCHED_BOOT_IDS.get_or_init(|| Mutex::new(HashSet::new()));
     let schedules = load_schedules_internal(&app)?;
+    let sequences = load_sequences_internal(&app)?;
     let on_battery = is_on_battery();
-    let game_active = is_any_game_running(&schedules);
+    let game_active = is_any_game_running(&schedules, &sequences);
 
     let mut results = Vec::new();
     let mut skipped_blocked = 0usize;
@@ -77,23 +78,24 @@ pub fn run_boot_launches(
             }
         }
 
-        let schedule = schedules.iter().find(|item| item.id == target.id);
-        if let Some(schedule) = schedule {
-            if is_launch_blocked(&schedules, schedule, on_battery, game_active) {
-                skipped_blocked += 1;
-                still_pending = true;
-                continue;
-            }
+        let Some(schedule) = schedules.iter().find(|item| item.id == target.id) else {
+            continue;
+        };
+
+        if is_launch_blocked(&schedules, schedule, on_battery, game_active) {
+            skipped_blocked += 1;
+            still_pending = true;
+            continue;
         }
 
-        match launch_path(&target.path) {
+        match launch_path(&schedule.app_path) {
             Ok(()) => {
                 launched_ids
                     .lock()
                     .expect("boot launch ids lock")
                     .insert(target.id.clone());
                 results.push(LaunchResult {
-                    path: target.path,
+                    path: schedule.app_path.clone(),
                     ok: true,
                     error: None,
                 });
@@ -101,7 +103,7 @@ pub fn run_boot_launches(
             Err(error) => {
                 eprintln!("[OnCue] boot launch failed for {}: {error}", target.id);
                 results.push(LaunchResult {
-                    path: target.path,
+                    path: schedule.app_path.clone(),
                     ok: false,
                     error: Some(error),
                 });

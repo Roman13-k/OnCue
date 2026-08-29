@@ -3,7 +3,6 @@ import { isTauriRuntime } from "../apps/api";
 
 export type BootLaunchTarget = {
   id: string;
-  path: string;
 };
 
 export type LaunchResult = {

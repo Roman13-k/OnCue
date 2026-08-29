@@ -25,7 +25,7 @@ export function useBootLauncher(schedules: Schedule[], ready: boolean) {
             item.health === "ok" &&
             item.appPath.trim().length > 0,
         )
-        .map((item) => ({ id: item.id, path: item.appPath }));
+        .map((item) => ({ id: item.id }));
 
       if (targets.length === 0) {
         done.current = true;

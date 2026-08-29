@@ -3,9 +3,10 @@ import type { AppTargetPreviewState } from "../types";
 
 type AppTargetPreviewProps = {
   state: AppTargetPreviewState;
+  iconFallback?: string | null;
 };
 
-export function AppTargetPreview({ state }: AppTargetPreviewProps) {
+export function AppTargetPreview({ state, iconFallback }: AppTargetPreviewProps) {
   if (state.status === "idle") return null;
 
   if (state.status === "loading") {
@@ -32,13 +33,14 @@ export function AppTargetPreview({ state }: AppTargetPreviewProps) {
   }
 
   const { info } = state;
+  const iconSrc = info.iconDataUrl ?? iconFallback ?? null;
 
   return (
     <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-xs">
       <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-muted text-text-secondary">
-        {info.iconDataUrl ? (
+        {iconSrc ? (
           <img
-            src={info.iconDataUrl}
+            src={iconSrc}
             alt=""
             className="size-7 object-contain"
             draggable={false}

@@ -13,6 +13,7 @@
     "allow-launch-application",
     "allow-boot-session",
     "allow-schedule-storage",
+    "allow-sequences",
     "allow-db",
     "allow-ml",
     "allow-privacy",

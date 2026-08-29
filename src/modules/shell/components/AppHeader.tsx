@@ -2,16 +2,17 @@ import { OnCueLogo } from "../../../shared/brand/OnCueLogo";
 import { cn } from "../../../shared/lib/cn";
 import { IconPlus, IconSettings } from "../../../shared/ui/icons";
 
-export type AppViewMode = "schedules" | "suggestions";
+export type AppViewMode = "schedules" | "sequences" | "suggestions";
 
 type AppHeaderProps = {
   mode: AppViewMode;
   onModeChange: (mode: AppViewMode) => void;
   scheduleCount: number;
+  sequenceCount: number;
   suggestionCount: number;
   panelOpen: boolean;
   settingsOpen: boolean;
-  onAdd: () => void;
+  onAdd?: () => void;
   onOpenSettings: () => void;
 };
 
@@ -19,13 +20,28 @@ export function AppHeader({
   mode,
   onModeChange,
   scheduleCount,
+  sequenceCount,
   suggestionCount,
   panelOpen,
   settingsOpen,
   onAdd,
   onOpenSettings,
 }: AppHeaderProps) {
-  const isSchedules = mode === "schedules";
+  const subtitle = (() => {
+    if (mode === "schedules") {
+      return scheduleCount === 0
+        ? "No schedules yet"
+        : `${scheduleCount} ${pluralSchedules(scheduleCount)} · drag rows to reorder`;
+    }
+    if (mode === "sequences") {
+      return sequenceCount === 0
+        ? "Launch companions when a trigger app opens"
+        : `${sequenceCount} ${pluralSequences(sequenceCount)} · watcher active`;
+    }
+    return suggestionCount === 0
+      ? "Suggestions based on launch habits"
+      : `${suggestionCount} ${pluralSuggestions(suggestionCount)} · higher probability ranks higher`;
+  })();
 
   return (
     <header className="flex shrink-0 flex-col gap-4 border-b border-border-subtle pb-4">
@@ -40,15 +56,7 @@ export function AppHeader({
                 Scheduler running
               </span>
             </div>
-            <p className="mt-1 text-sm text-text-secondary">
-              {isSchedules
-                ? scheduleCount === 0
-                  ? "No schedules yet"
-                  : `${scheduleCount} ${pluralSchedules(scheduleCount)} · drag rows to reorder`
-                : suggestionCount === 0
-                  ? "Suggestions based on launch habits"
-                  : `${suggestionCount} ${pluralSuggestions(suggestionCount)} · higher probability ranks higher`}
-            </p>
+            <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -66,7 +74,7 @@ export function AppHeader({
           >
             <IconSettings className="size-4" />
           </button>
-          {isSchedules ? (
+          {onAdd ? (
             <button
               type="button"
               onClick={onAdd}
@@ -79,7 +87,7 @@ export function AppHeader({
               )}
             >
               <IconPlus className="opacity-90" />
-              Add autostart
+              {mode === "sequences" ? "Add sequence" : "Add autostart"}
             </button>
           ) : null}
         </div>
@@ -90,12 +98,17 @@ export function AppHeader({
         className="inline-flex w-fit rounded-lg border border-border-subtle bg-surface-muted p-0.5"
       >
         <ModeTab
-          active={isSchedules}
+          active={mode === "schedules"}
           onClick={() => onModeChange("schedules")}
           label="Schedules"
         />
         <ModeTab
-          active={!isSchedules}
+          active={mode === "sequences"}
+          onClick={() => onModeChange("sequences")}
+          label="Sequences"
+        />
+        <ModeTab
+          active={mode === "suggestions"}
           onClick={() => onModeChange("suggestions")}
           label="Suggestions"
         />
@@ -133,6 +146,10 @@ function ModeTab({
 
 function pluralSchedules(n: number): string {
   return n === 1 ? "schedule" : "schedules";
+}
+
+function pluralSequences(n: number): string {
+  return n === 1 ? "sequence" : "sequences";
 }
 
 function pluralSuggestions(n: number): string {

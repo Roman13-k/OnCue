@@ -14,7 +14,6 @@ export async function refreshSchedulesHealth(schedules: Schedule[]): Promise<Sch
   return Promise.all(
     schedules.map(async (schedule) => {
       try {
-        // Never fetch website icons during health checks — that was freezing the UI.
         const info = await resolveAppTarget(schedule.appPath, { fetchIcon: false });
         if (looksLikeUrl(schedule.appPath)) {
           return markScheduleHealthy(schedule, {
